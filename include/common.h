@@ -12,12 +12,15 @@ namespace Common {
     void heapify(std::vector<T*> &arr, std::function<bool(const T*, const T*)> comp);
     
     // 计算data的HASH值，返回HEX字符串
-    std::string calculateHash(const std::vector<unsigned char> &data);
+    std::string calculateHash(const std::string &data);
 
     // 加密函数
     unsigned char encrypt(unsigned char b);
     // 解密函数
     unsigned char decrypt(unsigned char b);
+
+    // 删除扩展名
+    std::string extractFileName(const std::string &filename);
 };
 
 #include "common_impl.h"
