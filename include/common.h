@@ -21,6 +21,12 @@ namespace Common {
 
     // 删除扩展名
     std::string extractFileName(const std::string &filename);
+
+    // 将16进制字符串转换为二进制字符串
+    std::string hexToBinary(const std::string &hex);
+
+    // 将字节转换为8位二进制字符串
+    std::string byteToBinary(unsigned char byte);
 };
 
 #include "common_impl.h"
