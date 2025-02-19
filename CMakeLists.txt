@@ -15,7 +15,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 set(SRC_FILES
     ${CMAKE_SOURCE_DIR}/src/common.cpp
     ${CMAKE_SOURCE_DIR}/src/compressor.cpp
-    # ${CMAKE_SOURCE_DIR}/src/decompressor.cpp
+    ${CMAKE_SOURCE_DIR}/src/decompressor.cpp
     ${CMAKE_SOURCE_DIR}/src/ui.cpp
 )
 
@@ -30,3 +30,39 @@ target_link_libraries(ProgramDesign PRIVATE ProgramLib)
 
 # 指定头文件路径（适用于外部项目引用此库时）
 target_include_directories(ProgramLib PUBLIC ${CMAKE_SOURCE_DIR}/include)
+
+# enable_testing()
+
+# # 添加测试用例
+# # Test1:
+# add_test(NAME Test1
+#          COMMAND $<TARGET_FILE:ProgramDesign>
+#          ${CMAKE_SOURCE_DIR}/test/input/test1.txt
+#          ${CMAKE_BINARY_DIR}/output/test1.hfm)
+
+# # Test1_Compare:
+# add_test(NAME Test1_Compare
+#          COMMAND diff ${CMAKE_BINARY_DIR}/output/test1.hfm
+#                       ${CMAKE_SOURCE_DIR}/test/expected_output/test1.hfm)
+
+# # Test2:
+# add_test(NAME Test2
+#          COMMAND $<TARGET_FILE:ProgramDesign>
+#          ${CMAKE_SOURCE_DIR}/test/input/test2.txt
+#          ${CMAKE_BINARY_DIR}/output/test2.hfm)
+
+# # Test2_Compare:
+# add_test(NAME Test2_Compare
+#          COMMAND diff ${CMAKE_BINARY_DIR}/output/test2.hfm
+#                       ${CMAKE_SOURCE_DIR}/test/expected_output/test2.hfm)
+
+# # Test3:
+# add_test(NAME Test3
+#          COMMAND $<TARGET_FILE:ProgramDesign>
+#          ${CMAKE_SOURCE_DIR}/test/input/test3.txt
+#          ${CMAKE_BINARY_DIR}/output/test3.hfm)
+
+# # Test3_Compare:
+# add_test(NAME Test3_Compare
+#          COMMAND diff ${CMAKE_BINARY_DIR}/output/test3.hfm
+#                       ${CMAKE_SOURCE_DIR}/test/expected_output/test3.hfm)
