@@ -35,3 +35,7 @@
 /bin
 /build
 /lib
+/test
+
+# VSCode Config
+.vscode/
