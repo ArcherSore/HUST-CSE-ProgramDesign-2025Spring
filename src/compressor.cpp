@@ -68,11 +68,12 @@ namespace Compressor {
         inFile.close();
         
         // 2. 插入扩展信息：发送人和接收人信息
+        // 格式：发送人+接收人+原文本内容
+        if (!receiverInfo.empty()) {
+            content = receiverInfo + "\n" + content;
+        }
         if (!senderInfo.empty()) {
             content = senderInfo + "\n" + content;
-        }
-        if (!receiverInfo.empty()) {
-            content = content + "\n" + receiverInfo;
         }
 
         // 3. 加密处理
@@ -140,17 +141,13 @@ namespace Compressor {
         // 9. 遍历哈夫曼树得到每个字节对应的编码
         std::vector<std::string> huffmanCodes(256);
         getHuffmanCode(huffmanTreeRoot, "", huffmanCodes);
-        // 显示生成的哈夫曼编码表
-        // std::cout << "*****Huffman Encoding Table*****" << std::endl;
-        // for (int i = 0; i < 256; i++) {
-        //     if (freq[i] == 0) {
-        //         continue;
-        //     }
-        //     std::cout << "Byte: 0x" << std::hex << std::uppercase std::setw(2) << std::setfill('0') << i;
-        //     std::cout << " Code: " << huffmanCodes[i] << std::endl;
-        // }
 
-        // 10. 获取编码表并输出
+        // 10. 计算压缩前的数据HASH值
+        std::string OriginalDataHash = Common::calculateHash(processedContent);
+        std::cout << "Original Data Hash: 0x" << OriginalDataHash << std::endl;
+        std::cout << "Original Data Size: " << processedContent.size() << " bytes" << std::endl;
+
+        // 10. 获取编码表并输出到code.txt文件
         std::vector<EncodedData> EncodedTable(256);
         for (int i = 0; i < 256; i++) {
             if (freq[i] == 0) {
@@ -182,7 +179,6 @@ namespace Compressor {
             std::cerr << "Error opening output file: " << outputEncodingTable << std::endl;
             return;
         }
-        // 写入原始文本长度
         tableFile << processedContent.size() << std::endl;
         for (auto &entry : EncodedTable) {
             if (entry.length == 0) {
@@ -198,18 +194,32 @@ namespace Compressor {
         tableFile.close();
 
         // 11. 获取压缩后的数据并计算压缩数据的HASH值
-        std::vector<unsigned char> compressedData;
+        // 获取文本的哈夫曼编码
+        std::string bitStream;
         for (unsigned char c : processedContent) {
-            for (unsigned char byte : EncodedTable[c].bitCoded) {
-                compressedData.push_back(byte);
-            }
+            bitStream += huffmanCodes[c];
         }
-        std::string dataHash = Common::calculateHash(compressedData);
-        std::cout << "Compressed Data Hash: " << dataHash << std::endl;
+        while (bitStream.size() % 8 != 0) {
+            bitStream += "0";
+        }
+        // 获取压缩数据
+        std::vector<unsigned char> compressedData;
+        for (int i = 0; i < bitStream.size(); i += 8) {
+            std::string byteStr = bitStream.substr(i, 8);
+            unsigned char byte = 0;
+            for (char bit : byteStr) {
+                byte = byte << 1;
+                byte |= (bit - '0');
+            }
+            compressedData.push_back(byte);
+        }
+        // 输出压缩后数据的HASH值和大小
+        std::string CompressedDataHash = Common::calculateHash(bitStream);
+        std::cout << "Compressed Data Hash: 0x" << CompressedDataHash << std::endl;
         std::cout << "Compressed Data Size: " << compressedData.size() << " bytes" << std::endl;
 
         // 12. 将压缩数据写入文件
-        std::string outputCompressedFile = inputFile + ".huf";
+        std::string outputCompressedFile = "output/" + Common::extractFileName(inputFile) + ".hfm";
         std::ofstream outFile(outputCompressedFile, std::ios::binary);
         if (!outFile) {
             std::cerr << "Error opening output file: " << outputCompressedFile << std::endl;
