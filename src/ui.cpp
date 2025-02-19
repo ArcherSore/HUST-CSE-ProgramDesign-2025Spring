@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include "compressor.h"
+#include "decompressor.h"
 
 void UI::showMenu() {
     int choice = 1;
@@ -22,7 +23,7 @@ void UI::showMenu() {
 }
 
 void UI::processCompression() {
-    std::string inputFile = "input/01.txt";
+    std::string inputFile;
   
     // 提示用户输入需要压缩的文本文件名称
     std::cout << "Enter the input text file name to compress: ";
@@ -49,21 +50,21 @@ void UI::processCompression() {
 }
 
 void UI::processDecompression() {
-    // std::string compressedFile = "input/04.txt.huf";
-    // // 获取压缩文件名称和编码表文件名称
-    // std::cout << "Enter the compressed file name: ";
-    // std::getline(std::cin, compressedFile);
+    std::string compressedFile;
+    // 获取压缩文件名称和编码表文件名称
+    std::cout << "Enter the compressed file name: ";
+    std::getline(std::cin, compressedFile);
 
-    // // 判断是否需要解密
-    // char decryptChoice;
-    // bool decrypt = false;
-    // std::cout << "Is the file encrypted? (y/n): ";
-    // std::cin >> decryptChoice;
-    // if(decryptChoice == 'y' || decryptChoice == 'Y') {
-    //     decrypt = true;
-    // }
-    // std::cin.ignore();
+    // 判断是否需要解密
+    char decryptChoice;
+    bool decrypt = false;
+    std::cout << "Is the file encrypted? (y/n): ";
+    std::cin >> decryptChoice;
+    if(decryptChoice == 'y' || decryptChoice == 'Y') {
+        decrypt = true;
+    }
+    std::cin.ignore();
 
-    // // 调用 Decompressor 模块的 decompressFile() 函数执行解压操作
-    // Decompressor::decompressFile(compressedFile, decrypt);
+    // 调用 Decompressor 模块的 decompressFile() 函数执行解压操作
+    Decompressor::decompressFile(compressedFile, decrypt);
 }
