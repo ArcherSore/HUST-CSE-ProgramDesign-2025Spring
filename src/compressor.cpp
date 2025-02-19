@@ -173,7 +173,7 @@ namespace Compressor {
             }
         }
         // 输出编码表
-        std::string outputEncodingTable = "output/code.txt";
+        std::string outputEncodingTable = "build/output/code.txt";
         std::ofstream tableFile(outputEncodingTable);
         if (!tableFile) {
             std::cerr << "Error opening output file: " << outputEncodingTable << std::endl;
@@ -219,7 +219,7 @@ namespace Compressor {
         std::cout << "Compressed Data Size: " << compressedData.size() << " bytes" << std::endl;
 
         // 12. 将压缩数据写入文件
-        std::string outputCompressedFile = "output/" + Common::extractFileName(inputFile) + ".hfm";
+        std::string outputCompressedFile = "build/output/" + Common::extractFileName(inputFile) + ".hfm";
         std::ofstream outFile(outputCompressedFile, std::ios::binary);
         if (!outFile) {
             std::cerr << "Error opening output file: " << outputCompressedFile << std::endl;
