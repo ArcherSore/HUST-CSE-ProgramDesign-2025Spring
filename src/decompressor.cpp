@@ -103,39 +103,37 @@ namespace Decompressor {
         compressedContent.assign(std::istreambuf_iterator<char>(compressedData), std::istreambuf_iterator<char>());
         compressedData.close();
 
-        // 4. 将压缩数据转换为bit串
-        std::string bitString; // 待解压文本的bit串
-        for (unsigned char byte : compressedContent) {
-            bitString += Common::byteToBinary(byte);
-        }
-
-        // 5. 解码压缩数据
+        // 4. 解码压缩数据
         std::vector<unsigned char> decodedBytes; // 解码后的字节数组
         Trie::Node *current = root;
-        for (char bit : bitString) {
-            if (bit == '0') {
-                current = current->left;
-            } else {
-                current = current->right;
-            }
-            // 到达叶子节点，解码一个字符
-            if (current->isLeaf) {
-                decodedBytes.push_back(current->value);
-                if (decodedBytes.size() == TextLength) {
-                    break;
+        for (unsigned char byte : compressedContent) {
+            // 逐位解码
+            for (int pos = 7; pos >= 0 && decodedBytes.size() < TextLength; --pos) {
+                int bit = (byte >> pos) & 1;
+                if (bit == 0) {
+                    current = current->left;
+                } else {
+                    current = current->right;
                 }
-                current = root;
+                // 如果到达叶子节点，则解码出一个字符
+                if (current->isLeaf) {
+                    decodedBytes.push_back(current->value);
+                    current = root;
+                }
+            }
+            if (decodedBytes.size() == TextLength) {
+                break;
             }
         }
 
-        // 6. 解密处理
+        // 5. 解密处理
         if (decrypt) {
             for (unsigned char &ch : decodedBytes) {
                 ch = Common::decrypt(ch);
             }
         }
 
-        // 7. 输出解压缩后的文本
+        // 6. 输出解压缩后的文本
         std::string outputFile = "build/output/" + Common::extractFileName(compressedFile) + "_j.txt";
         std::ofstream outFile(outputFile, std::ios::binary);
         if (!outFile) {
@@ -147,6 +145,11 @@ namespace Decompressor {
         outFile.close();
         // 释放字典树内存
         Trie::free(root);
+
+        // 7. 显示解压缩文本hash值
+        std::string decompressedDataHash = Common::calculateHash(decodedBytes);
+        std::cout << "Decompressed data hash: 0x" << decompressedDataHash << std::endl;
+        std::cout << "Decompressed data size: " << decodedBytes.size() << std::endl;
 
         // 8. 记录解压缩结束时间
         auto endTime = std::chrono::high_resolution_clock::now();
