@@ -4,10 +4,36 @@
 #include <vector>
 #include <functional>
 #include <algorithm>
+#include <sstream>
+#include <string>
+
+namespace {
+    constexpr uint64_t FNV1A_64_INIT = 0xcbf29ce484222325ULL;
+    constexpr uint64_t FNV1A_64_PRIME = 0x100000001b3ULL;
+
+    template<typename T>
+    inline uint64_t fnv1a_64(const T &data) {
+        uint64_t hash = FNV1A_64_INIT;
+        for (unsigned char byte : data) {
+            hash ^= byte;
+            hash *= FNV1A_64_PRIME;
+        }
+        return hash;
+    }
+}
 
 namespace Common {
+    template<typename T>
+    inline std::string calculateHash(const T &data) {
+        uint64_t hashValue = fnv1a_64(data);
+        std::stringstream ss;
+        // 将HASH值转换为16进制字符串
+        ss << std::hex << hashValue;
+        return ss.str();
+    }
+
     template<typename T, typename Compare>
-    void heapify(std::vector<T *> &arr, int n, int i, Compare comp) {
+    inline void heapify(std::vector<T *> &arr, int n, int i, Compare comp) {
         int largest = i;
         int left = 2 * i + 1;
         int right = 2 * i + 2;
@@ -28,7 +54,7 @@ namespace Common {
     }
 
     template<typename T, typename Compare>
-    void heapSort(std::vector<T *> &arr, Compare comp) {
+    inline void heapSort(std::vector<T *> &arr, Compare comp) {
         int n = arr.size();
         // 构建堆
         for (int i = n / 2 - 1; i >= 0; i--) {

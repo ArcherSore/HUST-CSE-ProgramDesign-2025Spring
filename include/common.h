@@ -9,10 +9,12 @@ namespace Common {
     // 堆排序模板函数
     // comp为自定义比较函数
     template<typename T>
-    void heapify(std::vector<T*> &arr, std::function<bool(const T*, const T*)> comp);
+    inline void heapify(std::vector<T*> &arr, std::function<bool(const T*, const T*)> comp);
     
     // 计算data的HASH值，返回HEX字符串
-    std::string calculateHash(const std::string &data);
+    template<typename T>
+    inline std::string calculateHash(const T &data);
+
 
     // 加密函数
     unsigned char encrypt(unsigned char b);
