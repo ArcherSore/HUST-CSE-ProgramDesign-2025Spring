@@ -2,13 +2,36 @@
 #include <sstream>
 
 namespace Common {
-    unsigned char encrypt(unsigned char b) {
-        // 加密：每个字节加0x55
-        return b + 0x55;
+    // 解密函数
+    void encrypt(std::vector<unsigned char> &data, const std::string &key) {
+        if (key.empty()) {
+            // 偏移量解密
+            for (unsigned char &b : data) {
+                b += 0x55;
+            }
+        } else {
+            // 异或解密
+            int index = 0;
+            for (unsigned char &b : data) {
+                b ^= key[index];
+                index = (index + 1) % key.size();
+            }
+        }
     }
-    unsigned char decrypt(unsigned char b) {
-        // 解密：每个字节减0x55
-        return b - 0x55;
+    void decrypt(std::vector<unsigned char> &data, const std::string &key) {
+        if (key.empty()) {
+            // 偏移量解密
+            for (unsigned char &b : data) {
+                b -= 0x55;
+            }
+        } else {
+            // 异或解密
+            int index = 0;
+            for (unsigned char &b : data) {
+                b ^= key[index];
+                index = (index + 1) % key.size();
+            }
+        }
     }
     std::string extractFileName(const std::string &filename) {
         int slash_pos = filename.find_last_of("/\\");

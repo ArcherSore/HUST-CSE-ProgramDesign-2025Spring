@@ -7,7 +7,6 @@
 #include <functional>
 #include <iomanip>
 #include <algorithm>
-#include <unordered_map>
 #include <string>
 
 namespace {
@@ -55,33 +54,33 @@ namespace Compressor {
     void compressFile(const std::string &inputFile,
                       const std::string &senderInfo,
                       const std::string &receiverInfo,
-                      bool encrypt) {
+                      bool encrypt = false,
+                      const std::string &key = "") {
         // 1. 读取文本文件的内容
         std::ifstream inFile(inputFile, std::ios::binary);
         if (!inFile) {
             std::cerr << "Error opening input file: " << inputFile << std::endl;
             return;
         }
-        std::stringstream buffer;
-        buffer << inFile.rdbuf();
-        std::string content = buffer.str();
+        std::vector<unsigned char> content((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
         inFile.close();
         
         // 2. 插入扩展信息：发送人和接收人信息
         // 格式：发送人+接收人+原文本内容
-        if (!receiverInfo.empty()) {
-            content = receiverInfo + "\n" + content;
-        }
+        std::vector<unsigned char> processedContent;
         if (!senderInfo.empty()) {
-            content = senderInfo + "\n" + content;
+            processedContent.insert(processedContent.end(), senderInfo.begin(), senderInfo.end());
+            processedContent.push_back('\n');
         }
+        if (!receiverInfo.empty()) {
+            processedContent.insert(processedContent.end(), receiverInfo.begin(), receiverInfo.end());
+            processedContent.push_back('\n');
+        }
+        processedContent.insert(processedContent.end(), content.begin(), content.end());
 
         // 3. 加密处理
-        std::string processedContent = content;
         if (encrypt) {
-            for (char &ch : processedContent) {
-                ch = static_cast<char>(Common::encrypt(static_cast<unsigned char>(ch)));
-            }
+            Common::encrypt(processedContent, key);
         }
 
         // 4. 统计每个字节出现的频率
@@ -102,13 +101,14 @@ namespace Compressor {
         // 6. 使用公共模块的堆排序堆结点数组排序
         auto comp = [](const Node *a, const Node *b) -> bool {
             if (a->freq != b->freq) {
-                return a->freq > b->freq;
+                return a->freq < b->freq;
             }
-            return a->byteVal > b->byteVal;
+            return a->byteVal < b->byteVal;
         };
         Common::heapSort(nodes, comp);
         // 显示排序后的词频统计表
         std::cout << "*****Sorted Frequency List*****" << std::endl;
+        std::cout << "Byte  Freq" << std::endl;
         for (auto n : nodes) {
             /*
                 hex->整数的输出设置为十六进制
@@ -116,22 +116,25 @@ namespace Compressor {
                 setw->设置输出字段宽度
                 setfill->指定在宽度不足时左侧用字符'0'填充
             */
-            std::cout << "Byte: 0x" << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << static_cast<int>(n->byteVal);
-            std::cout << " Frequency: " << std::dec << n->freq << std::endl;
+            std::cout << "0x" << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << static_cast<int>(n->byteVal);
+            std::cout << '\t' << std::dec << n->freq << std::endl;
         }
+        std::cout << std::endl;
 
-        // 7. 构建哈夫曼树
-        while (nodes.size() > 1) {
-            Node *left = nodes[0];
-            Node *right = nodes[1];
+        // 7. 用小根堆构建哈夫曼树
+        Common::MinHeap<Node *, decltype(comp)> heap(comp);
+        for (auto node : nodes) {
+            heap.push(node);
+        }
+        while (heap.size() > 1) {
+            Node *left = heap.top();
+            heap.pop();
+            Node *right = heap.top();
+            heap.pop();
             Node *merged = new Node(left, right);
-
-            nodes.erase(nodes.begin());
-            nodes.erase(nodes.begin());
-            nodes.push_back(merged);
-            Common::heapSort(nodes, comp);
+            heap.push(merged);
         }
-        Node *huffmanTreeRoot = nodes.empty() ? nullptr : nodes[0];
+        Node *huffmanTreeRoot = nodes.empty() ? nullptr : heap.top();
 
         // 8. 计算WPL
         int wpl = 0;
@@ -143,7 +146,7 @@ namespace Compressor {
         getHuffmanCode(huffmanTreeRoot, "", huffmanCodes);
 
         // 10. 计算压缩前的数据HASH值
-        std::string OriginalDataHash = Common::calculateHash(processedContent);
+        std::string OriginalDataHash = Common::calculateHash(content);
         std::cout << "Original Data Hash: 0x" << OriginalDataHash << std::endl;
         std::cout << "Original Data Size: " << processedContent.size() << " bytes" << std::endl;
 
@@ -173,7 +176,8 @@ namespace Compressor {
             }
         }
         // 输出编码表
-        std::string outputEncodingTable = "build/output/code.txt";
+        std::string outputEncodingTable;
+        outputEncodingTable = "test/code.txt";
         std::ofstream tableFile(outputEncodingTable);
         if (!tableFile) {
             std::cerr << "Error opening output file: " << outputEncodingTable << std::endl;
@@ -194,32 +198,35 @@ namespace Compressor {
         tableFile.close();
 
         // 11. 获取压缩后的数据并计算压缩数据的HASH值
-        // 获取文本的哈夫曼编码
-        std::string bitStream;
-        for (unsigned char c : processedContent) {
-            bitStream += huffmanCodes[c];
-        }
-        while (bitStream.size() % 8 != 0) {
-            bitStream += "0";
-        }
         // 获取压缩数据
         std::vector<unsigned char> compressedData;
-        for (int i = 0; i < bitStream.size(); i += 8) {
-            std::string byteStr = bitStream.substr(i, 8);
-            unsigned char byte = 0;
-            for (char bit : byteStr) {
-                byte = byte << 1;
-                byte |= (bit - '0');
+        unsigned char byte = 0;
+        int bitcount = 0;
+        for (unsigned char c : processedContent) {
+            const std::string &code = huffmanCodes[c];
+            for (char bit : code) {
+                byte = (byte << 1) | (bit == '1' ? 1 : 0);
+                bitcount++;
+                if (bitcount == 8) {
+                    compressedData.push_back(byte);
+                    byte = 0;
+                    bitcount = 0;
+                }
             }
+        }
+        // 如果剩余比特不足8位，则在低位补 0
+        if (bitcount > 0) {
+            byte <<= (8 - bitcount);
             compressedData.push_back(byte);
         }
         // 输出压缩后数据的HASH值和大小
-        std::string CompressedDataHash = Common::calculateHash(bitStream);
+        std::string CompressedDataHash = Common::calculateHash(compressedData);
         std::cout << "Compressed Data Hash: 0x" << CompressedDataHash << std::endl;
         std::cout << "Compressed Data Size: " << compressedData.size() << " bytes" << std::endl;
 
         // 12. 将压缩数据写入文件
-        std::string outputCompressedFile = "build/output/" + Common::extractFileName(inputFile) + ".hfm";
+        std::string outputCompressedFile;
+        outputCompressedFile = "test/" + Common::extractFileName(inputFile) + ".hfm";
         std::ofstream outFile(outputCompressedFile, std::ios::binary);
         if (!outFile) {
             std::cerr << "Error opening output file: " << outputCompressedFile << std::endl;

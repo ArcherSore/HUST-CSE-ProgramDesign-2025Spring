@@ -24,19 +24,19 @@ void UI::showMenu() {
 
 void UI::processCompression() {
     std::string inputFile;
-  
     // 提示用户输入需要压缩的文本文件名称
     std::cout << "Enter the input text file name to compress: ";
     std::getline(std::cin, inputFile);
+    inputFile = "test/" + inputFile;
 
-    // // 获取发送人和接收人信息（可用于扩展功能）
+    // 获取发送人和接收人信息
     std::string senderInfo, receiverInfo;
     std::cout << "Enter sender info: ";
     std::getline(std::cin, senderInfo);
     std::cout << "Enter receiver info: ";
     std::getline(std::cin, receiverInfo);
 
-    // // 询问用户是否需要加密处理
+    // 询问用户是否需要加密处理
     char encryptChoice;
     bool encrypt = false;
     std::cout << "Do you want to apply encryption? (y/n): ";
@@ -46,7 +46,14 @@ void UI::processCompression() {
     }
     std::cin.ignore();
 
-    Compressor::compressFile(inputFile, senderInfo, receiverInfo, encrypt);
+    // 输入加密密钥
+    std::string key;
+    if (encrypt) {
+        std::cout << "Enter the encryption key: ";
+        std::getline(std::cin, key);
+    }
+
+    Compressor::compressFile(inputFile, senderInfo, receiverInfo, encrypt, key);
 }
 
 void UI::processDecompression() {
@@ -54,6 +61,14 @@ void UI::processDecompression() {
     // 获取压缩文件名称和编码表文件名称
     std::cout << "Enter the compressed file name: ";
     std::getline(std::cin, compressedFile);
+    compressedFile = "test/" + compressedFile;
+
+    // 获取发送人和接收人信息
+    std::string senderInfo, receiverInfo;
+    std::cout << "Enter sender info: ";
+    std::getline(std::cin, senderInfo);
+    std::cout << "Enter receiver info: ";
+    std::getline(std::cin, receiverInfo);
 
     // 判断是否需要解密
     char decryptChoice;
@@ -65,6 +80,12 @@ void UI::processDecompression() {
     }
     std::cin.ignore();
 
-    // 调用 Decompressor 模块的 decompressFile() 函数执行解压操作
-    Decompressor::decompressFile(compressedFile, decrypt);
+    // 获取解密密钥
+    std::string key;
+    if (decrypt) {
+        std::cout << "Enter the decryption key: ";
+        std::getline(std::cin, key);
+    }
+
+    Decompressor::decompressFile(compressedFile, senderInfo, receiverInfo, decrypt, key);
 }

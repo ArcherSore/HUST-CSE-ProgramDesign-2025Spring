@@ -25,7 +25,8 @@ namespace Compressor {
     void compressFile(const std::string &inputFile,
                       const std::string &senderInfo,
                       const std::string &receiverInfo,
-                      bool encrypt);
+                      bool encrypt,
+                      const std::string &key);
 }
 
 #endif // COMPRESSOR_H

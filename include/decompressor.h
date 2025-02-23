@@ -4,7 +4,11 @@
 #include <string>
 
 namespace Decompressor {
-    void decompressFile(const std::string& compressedFile, bool decrypt = false);
+    void decompressFile(const std::string &inputFile,
+                        const std::string &senderInfo,
+                        const std::string &receiverInfo,
+                        bool encrypt,
+                        const std::string &key);
 }
 
 #endif // DECOMPRESSOR_H

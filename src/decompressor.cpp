@@ -46,19 +46,26 @@ namespace Trie {
 }
 
 namespace Decompressor {
-    void decompressFile(const std::string &compressedFile, bool decrypt) {
+    void decompressFile(const std::string &compressedFile,
+                        const std::string &senderInfo,
+                        const std::string &receiverInfo,
+                        bool decrypt = false,
+                        const std::string &key = "") {
         // 1. 记录解压缩开始时间
         auto startTime = std::chrono::high_resolution_clock::now();
 
         // 2. 读取编码表文件，并构建字典树
-        std::ifstream encodedTable("build/output/code.txt");
+        std::string encodedPath;
+        encodedPath = "test/code.txt";
+
+        std::ifstream encodedTable(encodedPath);
         if (!encodedTable) {
-            std::cerr << "Error opening encoded table file: /build/output/code.txt" << std::endl;
+            std::cerr << "Error opening encoded table file: " << encodedPath << std::endl;
             return;
         }
         std::string line;
         std::getline(encodedTable, line);
-        // 获取文本长度
+        // 获取压缩后的文本字节长度
         int TextLength = std::stoi(line);
         
         Trie::Node *root = new Trie::Node();
@@ -121,40 +128,71 @@ namespace Decompressor {
                     current = root;
                 }
             }
+            // 已解码的字节跟code.txt中原文本字节数相同
             if (decodedBytes.size() == TextLength) {
                 break;
             }
         }
 
         // 5. 解密处理
+        std::vector<unsigned char> processedBytes = decodedBytes;
         if (decrypt) {
-            for (unsigned char &ch : decodedBytes) {
-                ch = Common::decrypt(ch);
-            }
+            Common::decrypt(processedBytes, key);
         }
 
-        // 6. 输出解压缩后的文本
-        std::string outputFile = "build/output/" + Common::extractFileName(compressedFile) + "_j.txt";
+        // 6. 读取压缩文件中收发人信息
+        std::string fullDecoded(processedBytes.begin(), processedBytes.end());
+        std::istringstream iss(fullDecoded);
+        int offset = 0;
+        if (!senderInfo.empty()) {
+            std::string sender;
+            std::getline(iss, sender);
+            if (sender != senderInfo) {
+                std::cerr << "Sender info mismatch: " << senderInfo << std::endl;
+                return;
+            }
+            std::cout << "Sender info: " << sender << std::endl;
+            offset += sender.size() + 1;
+        }
+        if (!receiverInfo.empty()) {
+            std::string receiver;
+            std::getline(iss, receiver);
+            if (receiver != receiverInfo) {
+                std::cerr << "Receiver info mismatch: " << receiverInfo << std::endl;
+                return;
+            }
+            std::cout << "Receiver info: " << receiver << std::endl;
+            offset += receiver.size() + 1;
+        }
+        processedBytes.erase(processedBytes.begin(), processedBytes.begin() + offset);
+
+        // 7. 输出解压缩后的文本
+        std::string outputFile;
+        outputFile = "test/" + Common::extractFileName(compressedFile) + "_j.txt";
         std::ofstream outFile(outputFile, std::ios::binary);
         if (!outFile) {
             std::cerr << "Error opening output file: " << outputFile << std::endl;
             Trie::free(root);
             return;
         }
-        outFile.write(reinterpret_cast<const char *>(decodedBytes.data()), decodedBytes.size());
+        outFile.write(reinterpret_cast<const char *>(processedBytes.data()), processedBytes.size());
         outFile.close();
         // 释放字典树内存
         Trie::free(root);
 
-        // 7. 显示解压缩文本hash值
-        std::string decompressedDataHash = Common::calculateHash(decodedBytes);
+        // 8. 显示解压缩文本hash值
+        std::string decompressedDataHash = Common::calculateHash(processedBytes);
         std::cout << "Decompressed data hash: 0x" << decompressedDataHash << std::endl;
-        std::cout << "Decompressed data size: " << decodedBytes.size() << std::endl;
+        std::cout << "Decompressed data size: " << processedBytes.size() << std::endl;
 
-        // 8. 记录解压缩结束时间
+        // 9. 记录解压缩结束时间
         auto endTime = std::chrono::high_resolution_clock::now();
         // 转换成ms
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
         std::cout << "Decompression completed in " << duration.count() << "ms" << std::endl;
+
+        // 10. 计算压缩率
+        double compressionRatio = static_cast<double>(compressedContent.size()) / processedBytes.size();
+        std::cout << "Compression ratio: " << compressionRatio << std::endl;
     }
 }
