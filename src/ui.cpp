@@ -52,6 +52,7 @@ void UI::processCompression() {
         std::cout << "Enter the encryption key: ";
         std::getline(std::cin, key);
     }
+    std::cout << std::endl;
 
     Compressor::compressFile(inputFile, senderInfo, receiverInfo, encrypt, key);
 }
@@ -86,6 +87,8 @@ void UI::processDecompression() {
         std::cout << "Enter the decryption key: ";
         std::getline(std::cin, key);
     }
-
-    Decompressor::decompressFile(compressedFile, senderInfo, receiverInfo, decrypt, key);
+    std::cout << std::endl;
+    
+    HashDecompressor::decompressFile(compressedFile, senderInfo, receiverInfo, decrypt, key);
+    TrieDecompressor::decompressFile(compressedFile, senderInfo, receiverInfo, decrypt, key);
 }

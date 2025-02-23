@@ -119,7 +119,6 @@ namespace Compressor {
             std::cout << "0x" << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << static_cast<int>(n->byteVal);
             std::cout << '\t' << std::dec << n->freq << std::endl;
         }
-        std::cout << std::endl;
 
         // 7. 用小根堆构建哈夫曼树
         Common::MinHeap<Node *, decltype(comp)> heap(comp);
@@ -139,6 +138,7 @@ namespace Compressor {
         // 8. 计算WPL
         int wpl = 0;
         computeWPL(huffmanTreeRoot, 0, wpl);
+        std::cout << "********************************" << std::endl;
         std::cout << "Huffman Tree WPL: " << wpl << std::endl;
 
         // 9. 遍历哈夫曼树得到每个字节对应的编码
@@ -146,6 +146,7 @@ namespace Compressor {
         getHuffmanCode(huffmanTreeRoot, "", huffmanCodes);
 
         // 10. 计算压缩前的数据HASH值
+        std::cout << "********************************" << std::endl;
         std::string OriginalDataHash = Common::calculateHash(content);
         std::cout << "Original Data Hash: 0x" << OriginalDataHash << std::endl;
         std::cout << "Original Data Size: " << processedContent.size() << " bytes" << std::endl;
@@ -220,6 +221,7 @@ namespace Compressor {
             compressedData.push_back(byte);
         }
         // 输出压缩后数据的HASH值和大小
+        std::cout << "********************************" << std::endl;
         std::string CompressedDataHash = Common::calculateHash(compressedData);
         std::cout << "Compressed Data Hash: 0x" << CompressedDataHash << std::endl;
         std::cout << "Compressed Data Size: " << compressedData.size() << " bytes" << std::endl;
@@ -237,12 +239,14 @@ namespace Compressor {
         outFile.close();
 
         // 13. 显示压缩数据后16个字节
+        std::cout << "********************************" << std::endl;
         std::cout << "Last 16 Bytes of Compressed Data:" << std::endl;
         int startPos = std::max(0, static_cast<int>(compressedData.size()) - 16);
         for (int i = startPos; i < compressedData.size(); i++) {
             std::cout << "0x" << std::hex << std::uppercase << std::setw(2) << std::setfill('0') << static_cast<int>(compressedData[i]) << " ";
         }
         std::cout << std::dec << std::endl;
+        std::cout << "********************************" << std::endl;
 
         // 14. 释放哈夫曼树结点
         deleteTree(huffmanTreeRoot);

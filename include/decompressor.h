@@ -3,7 +3,15 @@
 
 #include <string>
 
-namespace Decompressor {
+namespace TrieDecompressor {
+    void decompressFile(const std::string &inputFile,
+                        const std::string &senderInfo,
+                        const std::string &receiverInfo,
+                        bool encrypt,
+                        const std::string &key);
+}
+
+namespace HashDecompressor {
     void decompressFile(const std::string &inputFile,
                         const std::string &senderInfo,
                         const std::string &receiverInfo,
