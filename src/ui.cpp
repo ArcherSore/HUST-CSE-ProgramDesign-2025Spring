@@ -1,94 +1,75 @@
 #include "ui.h"
 #include <iostream>
-#include <string>
+#include <cstdio>
+#include <array>
+#include <memory>
+#include <stdexcept>
 #include "compressor.h"
 #include "decompressor.h"
 
-void UI::showMenu() {
-    int choice = 1;
-    std::cout << "Please select an operation:" << std::endl;
-    std::cout << "1. Compress a file" << std::endl;
-    std::cout << "2. Decompress a file" << std::endl;
-    std::cout << "Enter your choice (1/2): ";
-    std::cin >> choice;
-    std::cin.ignore();
+std::string executeCommand(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    if (!result.empty() && result.back() == '\n') {
+        result.pop_back();
+    }
+    return result;
+}
 
-    if (choice == 1) {
+void UI::showMenu() {
+    std::string choice = executeCommand("zenity --list --title=\"Operation Selection\" --text=\"Please select an operation\" --column=\"Operation\" \"Compress File\" \"Decompress File\"");
+    
+    if (choice == "Compress File") {
         processCompression();
-    } else if (choice == 2) {
+    } else if (choice == "Decompress File") {
         processDecompression();
     } else {
-        std::cout << "Invalid choice. Exiting." << std::endl;
+        system("zenity --error --text=\"Invalid selection\"");
     }
 }
 
 void UI::processCompression() {
-    std::string inputFile;
-    // 提示用户输入需要压缩的文本文件名称
-    std::cout << "Enter the input text file name to compress: ";
-    std::getline(std::cin, inputFile);
-    inputFile = "test/" + inputFile;
+    std::string inputFile = executeCommand("zenity --file-selection --title=\"Select File to Compress\" --filename=test/");
+    if (inputFile.empty()) return;
 
-    // 获取发送人和接收人信息
-    std::string senderInfo, receiverInfo;
-    std::cout << "Enter sender info: ";
-    std::getline(std::cin, senderInfo);
-    std::cout << "Enter receiver info: ";
-    std::getline(std::cin, receiverInfo);
-
-    // 询问用户是否需要加密处理
-    char encryptChoice;
-    bool encrypt = false;
-    std::cout << "Do you want to apply encryption? (y/n): ";
-    std::cin >> encryptChoice;
-    if(encryptChoice == 'y' || encryptChoice == 'Y') {
-        encrypt = true;
-    }
-    std::cin.ignore();
-
-    // 输入加密密钥
+    std::string senderInfo = executeCommand("zenity --entry --title=\"Sender Information\" --text=\"Format: Student ID Name\"");
+    std::string receiverInfo = executeCommand("zenity --entry --title=\"Receiver Information\" --text=\"Format: Student ID Name\"");
+    
+    bool encrypt = system("zenity --question --title=\"Encryption Option\" --text=\"Enable encryption?\" --ok-label=\"Yes\" --cancel-label=\"No\"") == 0;
+    
     std::string key;
     if (encrypt) {
-        std::cout << "Enter the encryption key: ";
-        std::getline(std::cin, key);
+        key = executeCommand("zenity --entry --title=\"Encryption Key\" --text=\"Please enter encryption key\" --hide-text");
     }
-    std::cout << std::endl;
 
     Compressor::compressFile(inputFile, senderInfo, receiverInfo, encrypt, key);
+    
+    system(("zenity --info --text=\"File compressed: " + inputFile + ".compressed\"").c_str());
 }
 
 void UI::processDecompression() {
-    std::string compressedFile;
-    // 获取压缩文件名称和编码表文件名称
-    std::cout << "Enter the compressed file name: ";
-    std::getline(std::cin, compressedFile);
-    compressedFile = "test/" + compressedFile;
+    std::string compressedFile = executeCommand("zenity --file-selection --title=\"Select File to Decompress\" --filename=test/ --file-filter=\"*.compressed\"");
+    if (compressedFile.empty()) return;
 
-    // 获取发送人和接收人信息
-    std::string senderInfo, receiverInfo;
-    std::cout << "Enter sender info: ";
-    std::getline(std::cin, senderInfo);
-    std::cout << "Enter receiver info: ";
-    std::getline(std::cin, receiverInfo);
+    std::string senderInfo = executeCommand("zenity --entry --title=\"Sender Information\" --text=\"Format: Student ID Name\"");
+    std::string receiverInfo = executeCommand("zenity --entry --title=\"Receiver Information\" --text=\"Format: Student ID Name\"");
 
-    // 判断是否需要解密
-    char decryptChoice;
-    bool decrypt = false;
-    std::cout << "Is the file encrypted? (y/n): ";
-    std::cin >> decryptChoice;
-    if(decryptChoice == 'y' || decryptChoice == 'Y') {
-        decrypt = true;
-    }
-    std::cin.ignore();
-
-    // 获取解密密钥
+    bool decrypt = system("zenity --question --title=\"Decryption Option\" --text=\"Require decryption?\" --ok-label=\"Yes\" --cancel-label=\"No\"") == 0;
+    
     std::string key;
     if (decrypt) {
-        std::cout << "Enter the decryption key: ";
-        std::getline(std::cin, key);
+        key = executeCommand("zenity --entry --title=\"Decryption Key\" --text=\"Please enter decryption key\" --hide-text");
     }
-    std::cout << std::endl;
-    
+
     HashDecompressor::decompressFile(compressedFile, senderInfo, receiverInfo, decrypt, key);
     TrieDecompressor::decompressFile(compressedFile, senderInfo, receiverInfo, decrypt, key);
+    
+    system(("zenity --info --text=\"File decompressed: " + compressedFile + ".decompressed\"").c_str());
 }

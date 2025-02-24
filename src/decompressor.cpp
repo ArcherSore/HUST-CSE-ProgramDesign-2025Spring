@@ -143,7 +143,6 @@ namespace TrieDecompressor {
         // 6. 读取压缩文件中收发人信息
         std::string fullDecoded(processedBytes.begin(), processedBytes.end());
         std::istringstream iss(fullDecoded);
-        int offset = 0;
         if (!senderInfo.empty()) {
             std::string sender;
             std::getline(iss, sender);
@@ -152,7 +151,6 @@ namespace TrieDecompressor {
                 return;
             }
             std::cout << "Sender info: " << sender << std::endl;
-            offset += sender.size() + 1;
         }
         if (!receiverInfo.empty()) {
             std::string receiver;
@@ -162,9 +160,7 @@ namespace TrieDecompressor {
                 return;
             }
             std::cout << "Receiver info: " << receiver << std::endl;
-            offset += receiver.size() + 1;
         }
-        processedBytes.erase(processedBytes.begin(), processedBytes.begin() + offset);
 
         // 7. 输出解压缩后的文本
         std::string outputFile;
@@ -291,7 +287,6 @@ namespace HashDecompressor {
         // 6. 读取压缩文件中收发人信息
         std::string fullDecoded(processedBytes.begin(), processedBytes.end());
         std::istringstream iss(fullDecoded);
-        int offset = 0;
         if (!senderInfo.empty()) {
             std::string sender;
             std::getline(iss, sender);
@@ -300,7 +295,6 @@ namespace HashDecompressor {
                 return;
             }
             std::cout << "Sender info: " << sender << std::endl;
-            offset += sender.size() + 1;
         }
         if (!receiverInfo.empty()) {
             std::string receiver;
@@ -310,9 +304,7 @@ namespace HashDecompressor {
                 return;
             }
             std::cout << "Receiver info: " << receiver << std::endl;
-            offset += receiver.size() + 1;
         }
-        processedBytes.erase(processedBytes.begin(), processedBytes.begin() + offset);
 
         // 7. 输出解压缩后的文本
         std::string outputFile;

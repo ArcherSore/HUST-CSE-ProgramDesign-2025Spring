@@ -78,18 +78,27 @@ namespace Compressor {
         }
         processedContent.insert(processedContent.end(), content.begin(), content.end());
 
-        // 3. 加密处理
+        // 3. 写入原文件
+        std::ofstream newinputFile(inputFile, std::ios::binary);
+        if (!newinputFile) {
+            std::cerr << "Error opening output file: " << inputFile << std::endl;
+            return;
+        }
+        newinputFile.write(reinterpret_cast<const char*>(processedContent.data()), processedContent.size());
+        newinputFile.close();
+
+        // 4. 加密处理
         if (encrypt) {
             Common::encrypt(processedContent, key);
         }
 
-        // 4. 统计每个字节出现的频率
+        // 5. 统计每个字节出现的频率
         std::vector<int> freq(256, 0);
         for (unsigned char c : processedContent) {
             freq[c]++;
         }
         
-        // 5. 构造结点数组
+        // 6. 构造结点数组
         std::vector<Node *> nodes;
         for (int i = 0; i < 256; i++) {
             if (freq[i] == 0) {
@@ -98,7 +107,7 @@ namespace Compressor {
             nodes.push_back(new Node(static_cast<unsigned char>(i), freq[i]));
         }
 
-        // 6. 使用公共模块的堆排序堆结点数组排序
+        // 7. 使用公共模块的堆排序堆结点数组排序
         auto comp = [](const Node *a, const Node *b) -> bool {
             if (a->freq != b->freq) {
                 return a->freq < b->freq;
@@ -120,7 +129,7 @@ namespace Compressor {
             std::cout << '\t' << std::dec << n->freq << std::endl;
         }
 
-        // 7. 用小根堆构建哈夫曼树
+        // 8. 用小根堆构建哈夫曼树
         Common::MinHeap<Node *, decltype(comp)> heap(comp);
         for (auto node : nodes) {
             heap.push(node);
@@ -135,23 +144,23 @@ namespace Compressor {
         }
         Node *huffmanTreeRoot = nodes.empty() ? nullptr : heap.top();
 
-        // 8. 计算WPL
+        // 9. 计算WPL
         int wpl = 0;
         computeWPL(huffmanTreeRoot, 0, wpl);
         std::cout << "********************************" << std::endl;
         std::cout << "Huffman Tree WPL: " << wpl << std::endl;
 
-        // 9. 遍历哈夫曼树得到每个字节对应的编码
+        // 10. 遍历哈夫曼树得到每个字节对应的编码
         std::vector<std::string> huffmanCodes(256);
         getHuffmanCode(huffmanTreeRoot, "", huffmanCodes);
 
-        // 10. 计算压缩前的数据HASH值
+        // 11. 计算压缩前的数据HASH值
         std::cout << "********************************" << std::endl;
         std::string OriginalDataHash = Common::calculateHash(content);
         std::cout << "Original Data Hash: 0x" << OriginalDataHash << std::endl;
         std::cout << "Original Data Size: " << processedContent.size() << " bytes" << std::endl;
 
-        // 10. 获取编码表并输出到code.txt文件
+        // 12. 获取编码表并输出到code.txt文件
         std::vector<EncodedData> EncodedTable(256);
         for (int i = 0; i < 256; i++) {
             if (freq[i] == 0) {
@@ -198,7 +207,7 @@ namespace Compressor {
         }
         tableFile.close();
 
-        // 11. 获取压缩后的数据并计算压缩数据的HASH值
+        // 13. 获取压缩后的数据并计算压缩数据的HASH值
         // 获取压缩数据
         std::vector<unsigned char> compressedData;
         unsigned char byte = 0;
@@ -226,7 +235,7 @@ namespace Compressor {
         std::cout << "Compressed Data Hash: 0x" << CompressedDataHash << std::endl;
         std::cout << "Compressed Data Size: " << compressedData.size() << " bytes" << std::endl;
 
-        // 12. 将压缩数据写入文件
+        // 14. 将压缩数据写入文件
         std::string outputCompressedFile;
         outputCompressedFile = "test/" + Common::extractFileName(inputFile) + ".hfm";
         std::ofstream outFile(outputCompressedFile, std::ios::binary);
@@ -238,7 +247,7 @@ namespace Compressor {
         outFile.write(reinterpret_cast<const char *>(compressedData.data()), compressedData.size());
         outFile.close();
 
-        // 13. 显示压缩数据后16个字节
+        // 15. 显示压缩数据后16个字节
         std::cout << "********************************" << std::endl;
         std::cout << "Last 16 Bytes of Compressed Data:" << std::endl;
         int startPos = std::max(0, static_cast<int>(compressedData.size()) - 16);
@@ -248,7 +257,7 @@ namespace Compressor {
         std::cout << std::dec << std::endl;
         std::cout << "********************************" << std::endl;
 
-        // 14. 释放哈夫曼树结点
+        // 16. 释放哈夫曼树结点
         deleteTree(huffmanTreeRoot);
     }
 }
