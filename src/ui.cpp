@@ -87,7 +87,7 @@ void UI::processCompression() {
 // 用途: 处理文件解压缩流程，包括压缩文件选择、信息输入、解密选项及调用 Decompressor 进行解压
 void UI::processDecompression() {
     // 选择待解压的压缩文件（默认目录为 test/，过滤 .compressed 文件）
-    std::string compressedFile = executeCommand("zenity --file-selection --title=\"Select File to Decompress\" --filename=test/ --file-filter=\"*.compressed\"");
+    std::string compressedFile = executeCommand("zenity --file-selection --title=\"Select File to Decompress\" --filename=test/ --file-filter=\"*.hfm\"");
     if (compressedFile.empty()) return;
 
     // 输入发送者与接收者信息，用于后续校验

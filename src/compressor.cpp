@@ -110,17 +110,17 @@ namespace Compressor {
         inFile.close();
         
         // 2. 插入扩展信息：发送者信息和接收者信息，并以换行符分隔
-        std::vector<unsigned char> processedContent;
+        std::vector<unsigned char> tempContent;
         if (!senderInfo.empty()) {
-            processedContent.insert(processedContent.end(), senderInfo.begin(), senderInfo.end());
-            processedContent.push_back('\n');
+            tempContent.insert(tempContent.end(), senderInfo.begin(), senderInfo.end());
+            tempContent.push_back('\n');
         }
         if (!receiverInfo.empty()) {
-            processedContent.insert(processedContent.end(), receiverInfo.begin(), receiverInfo.end());
-            processedContent.push_back('\n');
+            tempContent.insert(tempContent.end(), receiverInfo.begin(), receiverInfo.end());
+            tempContent.push_back('\n');
         }
         // 插入原始文件内容
-        processedContent.insert(processedContent.end(), content.begin(), content.end());
+        tempContent.insert(tempContent.end(), content.begin(), content.end());
 
         // 3. 将插入扩展信息后的数据写回原文件（覆盖原数据）
         std::ofstream newinputFile(inputFile, std::ios::binary);
@@ -128,9 +128,10 @@ namespace Compressor {
             std::cerr << "Error opening output file: " << inputFile << std::endl;
             return;
         }
-        newinputFile.write(reinterpret_cast<const char*>(processedContent.data()), processedContent.size());
+        newinputFile.write(reinterpret_cast<const char*>(tempContent.data()), tempContent.size());
         newinputFile.close();
 
+        std::vector<unsigned char> processedContent = tempContent;
         // 4. 如果启用了加密，则对数据进行加密处理
         if (encrypt) {
             Common::encrypt(processedContent, key);
