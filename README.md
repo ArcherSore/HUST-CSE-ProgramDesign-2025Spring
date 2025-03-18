@@ -33,8 +33,6 @@
 git clone https://github.com/ArcherSore/HUST-CSE-ProgramDesign-2025Spring.git
 ```
 
-> 注意：由于课程尚未结课，该仓库暂未公开。
-
 ### 2. 构建程序
 
 进入程序根目录后，执行以下命令：
